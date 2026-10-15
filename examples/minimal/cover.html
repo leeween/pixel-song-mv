@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>微光存档 · 封面</title>
+<style>
+body { margin:0; background:#101c35; display:flex; justify-content:center; }
+canvas { height:100vh; image-rendering:pixelated; }
+body.render canvas { height:auto; }
+</style>
+</head>
+<body>
+<canvas id="screen"></canvas>
+<script src="config.js"></script>
+<script src="lyrics.js"></script>
+<script src="engine.js"></script>
+<script src="kit.js"></script>
+<script src="scenes.js"></script>
+<script>
+const { Raster, C, text, compose } = PX, K = KIT, P = K.P;
+const A = new Raster(270,360), U = new Raster(540,720), O = new Raster(540,720);
+const cv = document.getElementById('screen'); cv.width=540; cv.height=720;
+const ctx = cv.getContext('2d');
+window.renderAt = () => {
+  A.clear(P.black); U.clear(0);
+  A.vgrad(0,0,270,360,C('#101c35'),C('#305265'),7);
+  for (let i=0;i<50;i++) A.px((i*83+17)%270,12+(i*43)%190,P.uiWhite);
+  const x=210, ground=275, top=150;
+  A.rect(0,ground,270,85,C('#132d32'));
+  A.halo(x,top-12,85,P.yellow,.85,2);
+  A.rect(x-15,top,30,125,C('#617e86')); A.rect(x+7,top,8,125,C('#3e5a6a'));
+  A.rect(x-22,top-22,44,22,C('#1d3547'));
+  A.rect(x-17,top-38,34,16,C('#c07756'));
+  A.rect(x-17,top-18,34,12,P.yellow);
+  K.big(A,90,ground,(T,x,y)=>MV.hero(T,x,y,{arm:'raise'}),3);
+  A.halo(130,ground-155,26,P.yellow,.7,2);
+  A.rect(128,ground-162,4,14,P.yellow); A.rect(123,ground-157,14,4,P.yellow);
+  text(U,'微光存档',270,56,66,P.yellow,{align:'c',outline:P.ink,ow:3});
+  text(U,'拾起微光，点亮远方',270,156,25,P.uiWhite,{align:'c'});
+  K.panel(U,28,582,484,104,P.yellow,C('#101c35'));
+  text(U,'LIGHT SAVED',270,598,18,P.uiWhite,{align:'c'});
+  text(U,'微光 +1',270,630,34,P.yellow,{align:'c'});
+  compose(A,U,O); ctx.putImageData(O.img,0,0);
+};
+if (new URLSearchParams(location.search).has('render')) document.body.classList.add('render');
+document.fonts.ready.then(()=>renderAt(0));
+</script>
+</body>
+</html>

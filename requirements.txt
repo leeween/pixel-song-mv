@@ -1,0 +1,4 @@
+# Use a virtual environment rather than modifying system Python.
+numpy==2.4.1
+scipy==1.17.1
+matplotlib==3.10.8

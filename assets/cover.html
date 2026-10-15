@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>像素 MV 封面</title>
+<style>
+  body { margin:0; background:#07070f; display:flex; justify-content:center; padding:16px; }
+  canvas { image-rendering:pixelated; height:min(90vh, 1440px); }
+  body.render { padding:0; } body.render canvas { height:auto; }
+</style>
+</head>
+<body>
+<canvas id="screen"></canvas>
+<script src="config.js"></script>
+<script src="lyrics.js"></script>
+<script src="engine.js"></script>
+<script src="kit.js"></script>
+<script src="scenes.js"></script>
+<script>
+// =====================================================================
+//  封面：只改 COVER 里的字段；画面想更丰富就改 drawCover()
+//  导出：node render.mjs --page cover.html --stills 0 --scale 2 --name cover.png
+// =====================================================================
+const COVER = {
+  ratio: '3:4',                     // '3:4' → 1080×1440（多数平台的信息流封面）；'9:16' → 1080×1920
+  label: (window.MV && MV.ep) || '', // 左上小标签，例如 '存档 03'；留空不显示
+  title: (window.MV && MV.title) || '歌名',
+  subtitle: '如果 ___ 是一款 ___ 游戏',
+  hook: ['【继续】', '【放弃】'],     // 底部钩子：一个字符串，或两个选项
+  footer: '',                       // 最底一行小字（账号名 / 系列名）；留空不显示
+  accent: null,                     // 主色，例如 PX.C('#2de2e6')；默认粉色
+};
+
+const { Raster, compose, text, textWidth, C, hash } = PX;
+const K = KIT, P = K.P;
+const AWc = 270, AHc = COVER.ratio === '9:16' ? 480 : 360, UWc = AWc * 2, UHc = AHc * 2;
+const A = new Raster(AWc, AHc), U = new Raster(UWc, UHc), O = new Raster(UWc, UHc);
+const cv = document.getElementById('screen'); cv.width = UWc; cv.height = UHc;
+const ctx = cv.getContext('2d');
+
+// 让一行字在给定宽度内尽量大
+const fitSize = (str, maxW, maxSize, weight = 900, spacing = 0) => { let s = maxSize; while (s > 16 && textWidth(str, s, weight, spacing) > maxW) s -= 2; return s; };
+
+function drawCover(A, U) {
+  const acc = COVER.accent || P.pink;
+  A.clear(P.black); U.clear(0);
+  // 背景：夜空渐变 + 楼群 + 雨
+  A.vgrad(0, 0, AWc, AHc, C('#0a0a1f'), C('#2a1747'), 7);
+  A.halo(AWc / 2, AHc * 0.62, 120, acc, 0.35, 2);
+  K.skyline(A, AHc, P.bldFar, [P.win, P.win2], 5, 3, 0.3);
+  for (let i = 0; i < 70; i++) { const x = hash(i * 3.1) * AWc, y = hash(i * 7.7) * AHc; A.px(x, y, P.greyD); A.px(x, y + 1, P.greyD); A.px(x - 1, y + 2, P.greyD); }
+  const ground = Math.round(AHc * 0.8);
+  A.rect(0, ground, AWc, AHc, P.ink);
+  // 主角 3 倍
+  const heroFn = (T, x, by) => (window.MV && MV.hero ? MV.hero(T, x, by, { arm: 'raise' }) : K.person(T, x, by, { shirt: P.blue, pants: P.ink }, { arm: 'raise' }));
+  K.big(A, AWc / 2, ground, heroFn, 3);
+
+  // 左上标签
+  if (COVER.label) {
+    const w = textWidth(COVER.label, 18, 700) + 46;
+    U.rect(24, 24, w, 34, P.uiInk); U.frame(24, 24, w, 34, P.uiWhite, 2);
+    for (let i = 0; i < 6; i++) U.rect(36 + i, 34 + i, 1, 14 - i * 2, acc);
+    text(U, COVER.label, 50, 30, 18, P.uiWhite, { weight: 700 });
+  }
+  // 片名 + 副标题
+  const ty = Math.round(UHc * (COVER.label ? 0.12 : 0.09));
+  const ts = fitSize(COVER.title, UWc - 40, 92, 900, 6);
+  text(U, COVER.title, UWc / 2, ty, ts, acc, { weight: 900, align: 'c', outline: P.uiWhite, ow: 3, spacing: 6, shadow: P.uiShadow, sd: 4 });
+  if (COVER.subtitle) {
+    const ss = fitSize(COVER.subtitle, UWc - 60, 28, 700);
+    text(U, COVER.subtitle, UWc / 2, ty + ts * 1.25 + 18, ss, P.uiWhite, { weight: 700, align: 'c', shadow: P.uiShadow, sd: 2 });
+  }
+  // 底部钩子框
+  const hy = Math.round(UHc * 0.82), hw = UWc - 60, hx = 30, hh = 84;
+  K.panel(U, hx, hy, hw, hh, acc);
+  if (Array.isArray(COVER.hook)) {
+    COVER.hook.forEach((h, i) => {
+      const cx = hx + hw * (i + 0.5) / COVER.hook.length, s = fitSize(h, hw / COVER.hook.length - 24, 32);
+      if (i === 0) for (let k = 0; k < 6; k++) U.rect(cx - textWidth(h, s, 900) / 2 - 20 + k, hy + hh / 2 - 7 + k, 1, 14 - k * 2, P.yellow);
+      text(U, h, cx, hy + (hh - s * 1.25) / 2, s, i === 0 ? P.yellow : P.uiWhite, { weight: 900, align: 'c' });
+    });
+  } else if (COVER.hook) {
+    const s = fitSize(COVER.hook, hw - 40, 30);
+    text(U, COVER.hook, UWc / 2, hy + (hh - s * 1.25) / 2, s, P.uiWhite, { weight: 900, align: 'c' });
+  }
+  if (COVER.footer) text(U, COVER.footer, UWc / 2, UHc - 32, 16, P.grey, { weight: 700, align: 'c', spacing: 2 });
+}
+
+window.renderAt = () => { drawCover(A, U); compose(A, U, O); ctx.putImageData(O.img, 0, 0); };
+if (new URLSearchParams(location.search).has('render')) document.body.classList.add('render');
+document.fonts.ready.then(() => renderAt(0));
+</script>
+</body>
+</html>

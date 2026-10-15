@@ -1,0 +1,18 @@
+{
+  "name": "pixel-song-mv",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A reusable agent skill for lyric-driven pixel game music videos.",
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@10.30.1",
+  "volta": { "node": "24.13.1" },
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "render": "node assets/render.mjs",
+    "browser:install": "playwright install chromium",
+    "test": "node --test tests/*.test.mjs",
+    "test:smoke": "node scripts/smoke.mjs"
+  },
+  "dependencies": { "playwright": "1.59.1" }
+}
